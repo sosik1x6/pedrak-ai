@@ -93,7 +93,7 @@
 
         function appendMessage(message, isBot = false) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isBot ? 'api-response' : 'https://pedrak-worker.sosik111111.workers.dev/https://api.blackbox.ai/api/chat'}`;
+            messageDiv.className = `message ${isBot ? 'api-response' : 'https://pedrak-worker.sosik111111.workers.dev/'}`;
     
             if(isBot) {
                 messageDiv.innerHTML = DOMPurify.sanitize(marked.parse(message));
