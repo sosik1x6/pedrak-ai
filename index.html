@@ -69,14 +69,23 @@
 <body>
     <img src="pedrak2.png" alt="pedrak" id="pedrakphot">
     <h1>Pedrak-AI</h1>
+    <button id="saveButton">Zapisz</button>
+    <button id="loadButton">Wczytaj</button>
     <div id="chat"></div>
     <input type="text" id="userInput" placeholder="Wpisz wiadomość..." />
     <button id="sendMessage">Wyślij</button>
     <button id="stopButton">Stop</button>
+    <h2>ID SESJI:</h2>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
     <script>
+
+        // Dodaj te zmienne globalne
+        let currentSessionId = generateSessionId();
+        let isSessionPersisted = false;
+        const KV_BASE_URL = 'https://pedrak-worker.sosik111111.workers.dev';
+
         let currentController = null;
         let currentReader = null;
         let isStreaming = false;
@@ -84,10 +93,63 @@
         const userInput = document.getElementById('userInput');
         const sendMessageButton = document.getElementById('sendMessage');
 
+        const KV_BASE = 'https://pedrak-worker.sosik111111.workers.dev';
+
         marked.setOptions({
         breaks: true,
         gfm: true
         });
+
+        function generateSessionId() {
+        return 'pedrak-' + crypto.randomUUID().slice(0, 8);
+        }
+
+    // Inicjalizacja sesji
+    function initSession() {
+        document.getElementById('sessionCode').textContent = `ID SESJI: ${currentSessionId}`;
+        updateSessionTTL();
+    }
+
+    // Zapisywanie sesji
+    async function saveSession() {
+  const history = Array.from(chatDiv.children).map(msg => ({
+    content: msg.textContent,
+    isBot: msg.classList.contains('api-response')
+  }));
+  
+  await fetch(`${KV_BASE}/save?id=${currentSessionId}&data=${encodeURIComponent(JSON.stringify(history))}`);
+}
+    // Wczytywanie sesji
+    async function loadSession() {
+        const sessionCode = prompt('Podaj kod sesji:');
+        const response = await fetch(`${KV_BASE}/load?id=${sessionCode}`);
+        const history = JSON.parse(await response.text());
+
+        try {
+            const response = await fetch(`${KV_BASE_URL}/load?id=${sessionCode}`);
+            if (!response.ok) throw new Error();
+            
+            const history = JSON.parse(await response.text());
+            chatDiv.innerHTML = '';
+            history.forEach(msg => {
+                msg.isBot ? appendMessage(msg.content, true) : appendMessage(`Ty: ${msg.content}`);
+            });
+            
+            currentSessionId = sessionCode;
+            initSession();
+            isSessionPersisted = true;
+        } catch {
+            appendMessage('[TEGO GÓWNA NIE MA W BAZIE!]', true);
+        }
+    }
+
+    // Aktualizacja czasu życia sesji
+    async function updateSessionTTL() {
+        await fetch(`${KV_BASE_URL}/keepalive?id=${currentSessionId}`);
+    }
+    // Event listenery dla nowych przycisków
+        document.getElementById('saveButton').addEventListener('click', saveSession);
+        document.getElementById('loadButton').addEventListener('click', loadSession);
 
         sendMessageButton.addEventListener('click', function() {
             const userMessage = userInput.value;
@@ -128,6 +190,14 @@
                 }
                 appendMessage('[Zatrzymano przez użytkownika]', true);
             }
+        });
+
+        // Ostrzeżenie przy zamknięciu
+        window.addEventListener('beforeunload', (e) => {
+        if (!isSessionPersisted) {
+            e.preventDefault();
+            e.returnValue = 'MASZ NIEZAPISANEGO PEDRAKA! NA PEWNO CHCESZ WYJŚĆ?';
+        }
         });
 
         async function sendMessageToAPI(message) {
@@ -200,8 +270,11 @@
                 isStreaming = false;
                 currentController = null;
                 currentReader = null;
+                updateSessionTTL();
+                isSessionPersisted = false;
             }
         }
+        initSession();
     </script>
 </body>
 </html>
