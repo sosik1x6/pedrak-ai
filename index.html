@@ -182,7 +182,6 @@
         await fetch(`${KV_BASE_URL}/keepalive?id=${currentSessionId}`);
     }
     // Event listenery dla nowych przycisków
-        document.getElementById('saveButton').addEventListener('click', saveSession);
         document.getElementById('loadButton').addEventListener('click', loadSession);
 
         sendMessageButton.addEventListener('click', function() {
