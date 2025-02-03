@@ -74,7 +74,7 @@
     <input type="text" id="userInput" placeholder="Wpisz wiadomość..." />
     <button id="sendMessage">Wyślij</button>
     <button id="stopButton">Stop</button>
-    <h2>ID SESJI:</h2>
+    <h2 id="sessionCode">ID SESJI:</h2>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
@@ -84,6 +84,8 @@
         let currentSessionId = generateSessionId();
         let isSessionPersisted = false;
         const KV_BASE_URL = 'https://pedrak-worker.sosik111111.workers.dev';
+
+        let isInitialized = false;
 
         let currentController = null;
         let currentReader = null;
@@ -121,20 +123,27 @@
 
     // Zapisywanie Sesji
     async function saveSession() {
-    const history = Array.from(chatDiv.children).map(msg => ({
-        content: msg.classList.contains('api-response') 
-            ? msg.querySelector('.content')?.innerHTML 
-            : msg.textContent.replace('Ty: ', ''),
-        isBot: msg.classList.contains('api-response')
-    }));
+    const history = Array.from(chatDiv.children).map(msg => {
+        const isBot = msg.classList.contains('api-response');
+        return {
+            content: isBot 
+                ? msg.querySelector('.content').innerHTML 
+                : msg.textContent.replace('Ty: ', ''),
+            isBot: isBot
+        };
+    });
     
     try {
-        await fetch(`${KV_BASE}/save?id=${currentSessionId}&data=${encodeURIComponent(JSON.stringify(history))}`);
+        const response = await fetch(
+            `${KV_BASE}/save?id=${currentSessionId}&data=${encodeURIComponent(JSON.stringify(history))}`
+        );
+        
+        if(!response.ok) throw new Error();
         isSessionPersisted = true;
     } catch {
-        appendMessage('[JEBŁO SIĘ PRZY ZAPISIE!]', true);
+        appendMessage('[CHUJOWO, NIE ZAPISAŁO SIĘ!]', true);
     }
-}
+    }
     // Wczytywanie sesji
     async function loadSession() {
     const sessionCode = prompt('PODAJ ID SESJI (pedrak-XXXX):');
@@ -183,18 +192,22 @@
         });
 
         function appendMessage(message, isBot = false) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isBot ? 'api-response' : 'https://pedrak-worker.sosik111111.workers.dev/'}`;
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isBot ? 'api-response' : ''}`; // Usunięty niepotrzebny URL z klasy
     
-            if(isBot) {
-                messageDiv.innerHTML = DOMPurify.sanitize(marked.parse(message));
-            } else {
-                messageDiv.textContent = message;
-            }
+    if(isBot) {
+        // Dodajemy strukturę wymaganą do późniejszego zapisu
+        messageDiv.innerHTML = `
+            <span class="prefix">Pedrak-AI: </span>
+            <span class="content">${DOMPurify.sanitize(marked.parse(message))}</span>
+        `;
+    } else {
+        messageDiv.textContent = `Ty: ${message}`;
+    }
     
-            chatDiv.appendChild(messageDiv);
-            chatDiv.scrollTop = chatDiv.scrollHeight;
-        }
+    chatDiv.appendChild(messageDiv);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+}
 
         const stopButton = document.getElementById('stopButton');
         stopButton.addEventListener('click', async () => {
@@ -290,13 +303,29 @@
                 }
             } finally {
                 isStreaming = false;
-                currentController = null;
-                currentReader = null;
-                await saveSession(); // Automatyczny zapis po odpowiedzi
-                updateSessionTTL();
+        currentController = null;
+        currentReader = null;
+        
+        // Zapisz tylko jeśli odpowiedź została ukończona
+        if(!document.querySelector('.content:empty')) {
+            await saveSession();
+            updateSessionTTL();
+        }
+        
+        // Aktualizuj status sesji
+        if(!isInitialized) {
+            initSession();
+            isInitialized = true;
+        }
             }
         }
-        initSession();
+        document.addEventListener('DOMContentLoaded', () => {
+    initSession();
+    // Wczytaj sesję z URL jeśli istnieje
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session');
+    if(sessionId) loadSession(sessionId);
+});
     </script>
 </body>
 </html>
