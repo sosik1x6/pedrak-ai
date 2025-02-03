@@ -69,7 +69,6 @@
 <body>
     <img src="pedrak2.png" alt="pedrak" id="pedrakphot">
     <h1>Pedrak-AI</h1>
-    <button id="saveButton">Zapisz</button>
     <button id="loadButton">Wczytaj</button>
     <div id="chat"></div>
     <input type="text" id="userInput" placeholder="Wpisz wiadomość..." />
@@ -106,42 +105,65 @@
 
     // Inicjalizacja sesji
     function initSession() {
-        document.getElementById('sessionCode').textContent = `ID SESJI: ${currentSessionId}`;
-        updateSessionTTL();
+    const sessionElement = document.getElementById('sessionCode');
+    sessionElement.textContent = `ID SESJI: ${currentSessionId}`;
+    sessionElement.style.color = '#ff0000';
+    sessionElement.style.cursor = 'pointer';
+    
+    // Kopiowanie ID przy kliknięciu
+    sessionElement.addEventListener('click', () => {
+        navigator.clipboard.writeText(currentSessionId);
+        alert('Skopiowano ID sesji!');
+    });
+    
+    updateSessionTTL();
     }
 
-    // Zapisywanie sesji
+    // Zapisywanie Sesji
     async function saveSession() {
-  const history = Array.from(chatDiv.children).map(msg => ({
-    content: msg.textContent,
-    isBot: msg.classList.contains('api-response')
-  }));
-  
-  await fetch(`${KV_BASE}/save?id=${currentSessionId}&data=${encodeURIComponent(JSON.stringify(history))}`);
+    const history = Array.from(chatDiv.children).map(msg => ({
+        content: msg.classList.contains('api-response') 
+            ? msg.querySelector('.content')?.innerHTML 
+            : msg.textContent.replace('Ty: ', ''),
+        isBot: msg.classList.contains('api-response')
+    }));
+    
+    try {
+        await fetch(`${KV_BASE}/save?id=${currentSessionId}&data=${encodeURIComponent(JSON.stringify(history))}`);
+        isSessionPersisted = true;
+    } catch {
+        appendMessage('[JEBŁO SIĘ PRZY ZAPISIE!]', true);
+    }
 }
     // Wczytywanie sesji
     async function loadSession() {
-        const sessionCode = prompt('Podaj kod sesji:');
-        const response = await fetch(`${KV_BASE}/load?id=${sessionCode}`);
-        const history = JSON.parse(await response.text());
+    const sessionCode = prompt('PODAJ ID SESJI (pedrak-XXXX):');
+    if (!sessionCode) return;
 
-        try {
-            const response = await fetch(`${KV_BASE_URL}/load?id=${sessionCode}`);
-            if (!response.ok) throw new Error();
-            
-            const history = JSON.parse(await response.text());
-            chatDiv.innerHTML = '';
-            history.forEach(msg => {
-                msg.isBot ? appendMessage(msg.content, true) : appendMessage(`Ty: ${msg.content}`);
-            });
-            
-            currentSessionId = sessionCode;
-            initSession();
-            isSessionPersisted = true;
-        } catch {
-            appendMessage('[TEGO GÓWNA NIE MA W BAZIE!]', true);
-        }
+    try {
+        const response = await fetch(`${KV_BASE}/load?id=${sessionCode}`);
+        if (!response.ok) throw new Error();
+        
+        const history = JSON.parse(await response.text());
+        chatDiv.innerHTML = '';
+        history.forEach(msg => {
+            if(msg.isBot) {
+                const div = document.createElement('div');
+                div.className = 'message api-response';
+                div.innerHTML = DOMPurify.sanitize(marked.parse(msg.content));
+                chatDiv.appendChild(div);
+            } else {
+                appendMessage(`Ty: ${msg.content}`);
+            }
+        });
+        
+        currentSessionId = sessionCode;
+        initSession();
+        isSessionPersisted = true;
+    } catch {
+        appendMessage('[CHUJOWY KOD, NIE MA TAKIEJ SESJI!]', true);
     }
+}
 
     // Aktualizacja czasu życia sesji
     async function updateSessionTTL() {
@@ -270,8 +292,8 @@
                 isStreaming = false;
                 currentController = null;
                 currentReader = null;
+                await saveSession(); // Automatyczny zapis po odpowiedzi
                 updateSessionTTL();
-                isSessionPersisted = false;
             }
         }
         initSession();
