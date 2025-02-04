@@ -85,8 +85,7 @@
 
         let isProcessing = false;
 
-        let currentSessionId;
-        let isSessionPersisted = false;        
+        let currentSessionId;  
         const KV_BASE_URL = 'https://pedrak-worker.sosik111111.workers.dev';
 
         let isInitialized = false;
@@ -142,7 +141,6 @@ async function loadSessionData() {
                     appendMessage(text);
                 }
             });
-            isSessionPersisted = true;
         }
     } catch(error) {
         console.error('Błąd ładowania:', error);
@@ -175,11 +173,9 @@ async function loadSessionData() {
     const savedSession = getSessionFromCookie();
     if(savedSession) {
         currentSessionId = savedSession;
-        isSessionPersisted = true;
     } else {
         currentSessionId = generateSessionId();
         saveSessionToCookie(currentSessionId);
-        isSessionPersisted = false;
     }
 
     const sessionElement = document.getElementById('sessionCode');
@@ -215,12 +211,10 @@ async function loadSessionData() {
                     appendMessage(msg.content.startsWith('Ty: ') ? msg.content : `Ty: ${msg.content}`);
                 }
             });
-            isSessionPersisted = true;
         }
         await updateSessionTTL();
     } catch(error) {
         console.error('Błąd ładowania sesji:', error);
-        isSessionPersisted = false;
     }
 });
 
@@ -385,7 +379,6 @@ async function loadSession() {
         currentSessionId = generateSessionId();
         saveSessionToCookie(currentSessionId);
         chatDiv.innerHTML = '';
-        isSessionPersisted = false;
         
         document.getElementById('sessionCode').textContent = `ID SESJI: ${currentSessionId}`;
         await saveSession();
@@ -404,14 +397,6 @@ async function loadSession() {
                     currentController.abort();
                 }               
             }
-        });
-
-        // Ostrzeżenie przy zamknięciu
-        window.addEventListener('beforeunload', (e) => {
-        if (!isSessionPersisted) {
-            e.preventDefault();
-            e.returnValue = 'MASZ NIEZAPISANEGO PEDRAKA! NA PEWNO CHCESZ WYJŚĆ?';
-        }
         });
 
         async function sendMessageToAPI(message) {
