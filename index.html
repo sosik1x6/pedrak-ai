@@ -70,6 +70,7 @@
     <img src="pedrak2.png" alt="pedrak" id="pedrakphot">
     <h1>Pedrak-AI</h1>
     <button id="loadButton">Wczytaj</button>
+    <button id="newSessionButton">Nowa Sesja</button>
     <div id="chat"></div>
     <input type="text" id="userInput" placeholder="Wpisz wiadomość..." />
     <button id="sendMessage">Wyślij</button>
@@ -84,7 +85,7 @@
 
         let isProcessing = false;
 
-        let currentSessionId = generateSessionId();
+        let currentSessionId;
         let isSessionPersisted = false;
         const KV_BASE_URL = 'https://pedrak-worker.sosik111111.workers.dev';
 
@@ -104,24 +105,201 @@
         gfm: true
         });
 
-        function generateSessionId() {
-        return 'pedrak-' + crypto.randomUUID().slice(0, 8);
+        function initializeApp() {
+    // 1. Pobierz sesję z ciasteczka
+    currentSessionId = getSessionFromCookie();
+    
+    // 2. Jeśli brak, generuj nową
+    if(!currentSessionId) {
+        currentSessionId = generateSessionId();
+        saveSessionToCookie(currentSessionId);
+    }
+    
+    // 3. Zaktualizuj UI
+    document.getElementById('sessionCode').textContent = `ID SESJI: ${currentSessionId}`;
+    
+    // 4. Załaduj historię
+    loadSessionData();
+}
+async function loadSessionData() {
+    try {
+        const response = await fetch(`${KV_BASE}/load?id=${currentSessionId}`);
+        if(response.ok) {
+            const history = JSON.parse(await response.text());
+            chatDiv.innerHTML = '';
+            
+            history.forEach(msg => {
+                if(msg.isBot) {
+                    const div = document.createElement('div');
+                    div.className = 'message api-response';
+                    div.innerHTML = `
+                        <span class="prefix">Pedrak-AI: </span>
+                        <span class="content">${DOMPurify.sanitize(msg.content)}</span>
+                    `;
+                    chatDiv.appendChild(div);
+                } else {
+                    const text = msg.content.startsWith('Ty: ') ? msg.content : `Ty: ${msg.content}`;
+                    appendMessage(text);
+                }
+            });
+            isSessionPersisted = true;
+        }
+    } catch(error) {
+        console.error('Błąd ładowania:', error);
+    }
+}
+    initializeApp();
+
+        function saveSessionToCookie(sessionId) {
+            const expires = new Date();
+            expires.setFullYear(expires.getFullYear() + 1);
+            document.cookie = `pedrak_session=${encodeURIComponent(sessionId)}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+        } 
+        function getSessionFromCookie() {
+        const cookies = document.cookie.split(';');
+        for(let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if(name === 'pedrak_session') {
+            return decodeURIComponent(value);
+        }
+        }
+        return null;
         }
 
-    // Inicjalizacja sesji
+
+    function generateSessionId() {
+    return 'pedrak-' + crypto.randomUUID().slice(0, 8);
+    }
+
     function initSession() {
+    const savedSession = getSessionFromCookie();
+    if(savedSession) {
+        currentSessionId = savedSession;
+        isSessionPersisted = true;
+    } else {
+        currentSessionId = generateSessionId();
+        saveSessionToCookie(currentSessionId);
+        isSessionPersisted = false;
+    }
+
     const sessionElement = document.getElementById('sessionCode');
     sessionElement.textContent = `ID SESJI: ${currentSessionId}`;
     sessionElement.style.color = '#ff0000';
     sessionElement.style.cursor = 'pointer';
     
-    // Kopiowanie ID przy kliknięciu
     sessionElement.addEventListener('click', () => {
         navigator.clipboard.writeText(currentSessionId);
     });
-    
-    updateSessionTTL();
     }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+    initSession(); 
+    
+    try {
+        // Najpierw spróbuj załadować historię
+        const response = await fetch(`${KV_BASE}/load?id=${currentSessionId}`);
+        if(response.ok) {
+            const history = JSON.parse(await response.text());
+            chatDiv.innerHTML = '';
+            
+            history.forEach(msg => {
+                if(msg.isBot) {
+                    const div = document.createElement('div');
+                    div.className = 'message api-response';
+                    div.innerHTML = `
+                        <span class="prefix">Pedrak-AI: </span>
+                        <span class="content">${DOMPurify.sanitize(msg.content)}</span>
+                    `;
+                    chatDiv.appendChild(div);
+                } else {
+                    appendMessage(msg.content.startsWith('Ty: ') ? msg.content : `Ty: ${msg.content}`);
+                }
+            });
+            isSessionPersisted = true;
+        }
+        await updateSessionTTL();
+    } catch(error) {
+        console.error('Błąd ładowania sesji:', error);
+        isSessionPersisted = false;
+    }
+});
+
+// Dodaj autozapis przed zamknięciem
+window.addEventListener('beforeunload', async (e) => {
+    if(chatDiv.children.length > 0) {
+        e.preventDefault();
+        await saveSession();
+        e.returnValue = '';
+    }
+});
+
+async function saveSession() {
+    const history = Array.from(chatDiv.children).map(msg => {
+        const isBot = msg.classList.contains('api-response');
+        return {
+            content: isBot ? 
+                msg.querySelector('.content').innerHTML :
+                msg.textContent.replace('Ty: ', '').trim(),
+            isBot: isBot
+        };
+    });
+
+    try {
+        const response = await fetch(`${KV_BASE}/save`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id: currentSessionId, data: history})
+        });
+        
+        if(response.ok) {
+            saveSessionToCookie(currentSessionId);
+            isSessionPersisted = true;
+        } else {
+            throw new Error(await response.text());
+        }
+        
+        await updateSessionTTL();
+    } catch (error) {
+        alert(`[KURWA, NIE ZAPISAŁO SIĘ: ${error.message}]`);
+        isSessionPersisted = false;
+    }
+}
+
+async function loadSession() {
+    const sessionCode = prompt('PODAJ ID SESJI (pedrak-XXXX):').trim();
+    if (!sessionCode) return;
+
+    try {
+        const response = await fetch(`${KV_BASE}/load?id=${sessionCode}`);
+        if (!response.ok) throw new Error('Sesja nie istnieje');
+        
+        const history = JSON.parse(await response.text());
+        chatDiv.innerHTML = '';
+        
+        history.forEach(msg => {
+            if(msg.isBot) {
+                const div = document.createElement('div');
+                div.className = 'message api-response';
+                div.innerHTML = `
+                    <span class="prefix">Pedrak-AI: </span>
+                    <span class="content">${DOMPurify.sanitize(msg.content)}</span>
+                `;
+                chatDiv.appendChild(div);
+            } else {
+                appendMessage(msg.content.startsWith('Ty: ') ? msg.content : `Ty: ${msg.content}`);
+            }
+        });
+        
+        currentSessionId = sessionCode;
+        saveSessionToCookie(currentSessionId);
+        document.getElementById('sessionCode').textContent = `ID SESJI: ${currentSessionId}`;
+        isSessionPersisted = true;
+        
+        await updateSessionTTL();
+    } catch (error) {
+        alert(`[CHUJOWO: ${error.message}]`);
+    }
+}
 
     // Zapisywanie Sesji
     async function saveSession() {
@@ -147,6 +325,11 @@
             })
         });
         
+        if(response.ok) {
+            saveSessionToCookie(currentSessionId); // Aktualizuj cookie
+            isSessionPersisted = true;
+        }
+        
         if(!response.ok) throw new Error(await response.text());
         isSessionPersisted = true;
         
@@ -155,44 +338,23 @@
         alert(`[KURWA, NIE ZAPISAŁO SIĘ: ${error.message}]`);
     }
 }
-    // Wczytywanie sesji
-    async function loadSession() {
-    const sessionCode = prompt('PODAJ ID SESJI (pedrak-XXXX):').trim();
-    if (!sessionCode) return;
 
-    try {
-        const response = await fetch(`${KV_BASE}/load?id=${sessionCode}`);
-        if (!response.ok) throw new Error('Sesja nie istnieje');
-        
-        const history = JSON.parse(await response.text());
-        chatDiv.innerHTML = '';
-        
-        history.forEach(msg => {
-            if(msg.isBot) {
-                const div = document.createElement('div');
-                div.className = 'message api-response';
-                div.innerHTML = `
-                    <span class="prefix">Pedrak-AI: </span>
-                    <span class="content">${DOMPurify.sanitize(msg.content)}</span>
-                `;
-                chatDiv.appendChild(div);
-            } else {
-                appendMessage(msg.content.startsWith('Ty: ') ? msg.content : `Ty: ${msg.content}`);
-            }
-        });
-        
-        // Wymuś aktualizację ID i zapis
-        currentSessionId = sessionCode;
-        initSession();
-        await saveSession(); // Nadpisz stary format danych
-    } catch (error) {
-        alert(`[CHUJOWO: ${error.message}]`);
-    }
-}
 
     // Aktualizacja czasu życia sesji
     async function updateSessionTTL() {
-        await fetch(`${KV_BASE_URL}/keepalive?id=${currentSessionId}`);
+    try {
+        // Dodaj abort controller z timeoutem
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        await fetch(`${KV_BASE_URL}/keepalive?id=${currentSessionId}`, {
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+    } catch (error) {
+        console.error('Błąd aktualizacji TTL:', error);
+    }
     }
     // Event listenery dla nowych przycisków
         document.getElementById('loadButton').addEventListener('click', loadSession);
@@ -206,12 +368,11 @@
             sendMessageToAPI(userMessage);
         });
 
-        function appendMessage(message, isBot = false) {
+    function appendMessage(message, isBot = false) {
     const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${isBot ? 'api-response' : ''}`; // Usunięty niepotrzebny URL z klasy
-    
+    messageDiv.className = `message ${isBot ? 'api-response' : ''}`;
+
     if(isBot) {
-        // Dodajemy strukturę wymaganą do późniejszego zapisu
         messageDiv.innerHTML = `
             <span class="prefix">Pedrak-AI: </span>
             <span class="content">${DOMPurify.sanitize(marked.parse(message))}</span>
@@ -222,7 +383,23 @@
     
     chatDiv.appendChild(messageDiv);
     chatDiv.scrollTop = chatDiv.scrollHeight;
-}
+    }
+
+    document.getElementById('newSessionButton').addEventListener('click', async () => {
+    if(confirm('NA PEWNO CHCESZ NOWĄ SESJĘ? STARA ZOSTANIE WYJEBANA DO KOSZA!')) {
+        currentSessionId = generateSessionId();
+        saveSessionToCookie(currentSessionId);
+        chatDiv.innerHTML = '';
+        isSessionPersisted = false;
+        
+        document.getElementById('sessionCode').textContent = `ID SESJI: ${currentSessionId}`;
+        await saveSession();
+    }
+});
+
+    
+    chatDiv.appendChild(messageDiv);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
 
         const stopButton = document.getElementById('stopButton');
         stopButton.addEventListener('click', async () => {
@@ -320,31 +497,19 @@
             console.error('Błąd:', error);
             alert('[KURWA, COŚ SIĘ POSRAPAŁO!]');
         } }   finally {
-                isProcessing = false;
-                isStreaming = false;
-                currentController = null;
-                currentReader = null;
+        isProcessing = false;
+        isStreaming = false;
+        currentController = null;
+        currentReader = null;
         
         // Zapisz tylko jeśli odpowiedź została ukończona
         if(!document.querySelector('.content:empty')) {
             await saveSession();
             updateSessionTTL();
         }
-        
-        // Aktualizuj status sesji
-        if(!isInitialized) {
-            initSession();
-            isInitialized = true;
-        }
             }
         }
-        document.addEventListener('DOMContentLoaded', () => {
-    initSession();
-    // Wczytaj sesję z URL jeśli istnieje
-    const urlParams = new URLSearchParams(window.location.search);
-    const sessionId = urlParams.get('session');
-    if(sessionId) loadSession(sessionId);
-});
+
     </script>
 </body>
 </html>
