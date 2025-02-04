@@ -118,7 +118,6 @@
     // Kopiowanie ID przy kliknięciu
     sessionElement.addEventListener('click', () => {
         navigator.clipboard.writeText(currentSessionId);
-        alert('Skopiowano ID sesji!');
     });
     
     updateSessionTTL();
@@ -129,51 +128,60 @@
     const history = Array.from(chatDiv.children).map(msg => {
         const isBot = msg.classList.contains('api-response');
         return {
-            content: isBot 
-                ? msg.querySelector('.content').innerHTML 
-                : msg.textContent.replace('Ty: ', ''),
+            content: isBot ? 
+                msg.querySelector('.content').innerHTML :
+                msg.textContent.replace('Ty: ', '').trim(),
             isBot: isBot
         };
     });
-    
+
     try {
+        const encodedData = encodeURIComponent(JSON.stringify(history));
         const response = await fetch(
-            `${KV_BASE}/save?id=${currentSessionId}&data=${encodeURIComponent(JSON.stringify(history))}`
+            `${KV_BASE}/save?id=${currentSessionId}&data=${encodedData}`
         );
         
-        if(!response.ok) throw new Error();
+        if(!response.ok) throw new Error(await response.text());
         isSessionPersisted = true;
-    } catch {
-        appendMessage('[CHUJOWO, NIE ZAPISAŁO SIĘ!]', true);
+        
+        // Wymuś aktualizację TTL nawet jeśli była inna sesja
+        await updateSessionTTL(); 
+    } catch (error) {
+        alert(`[KURWA, NIE ZAPISAŁO SIĘ: ${error.message}]`);
     }
-    }
+}
     // Wczytywanie sesji
     async function loadSession() {
-    const sessionCode = prompt('PODAJ ID SESJI (pedrak-XXXX):');
+    const sessionCode = prompt('PODAJ ID SESJI (pedrak-XXXX):').trim();
     if (!sessionCode) return;
 
     try {
         const response = await fetch(`${KV_BASE}/load?id=${sessionCode}`);
-        if (!response.ok) throw new Error();
+        if (!response.ok) throw new Error('Sesja nie istnieje');
         
         const history = JSON.parse(await response.text());
         chatDiv.innerHTML = '';
+        
         history.forEach(msg => {
             if(msg.isBot) {
                 const div = document.createElement('div');
                 div.className = 'message api-response';
-                div.innerHTML = DOMPurify.sanitize(marked.parse(msg.content));
+                div.innerHTML = `
+                    <span class="prefix">Pedrak-AI: </span>
+                    <span class="content">${DOMPurify.sanitize(msg.content)}</span>
+                `;
                 chatDiv.appendChild(div);
             } else {
-                appendMessage(`Ty: ${msg.content}`);
+                appendMessage(msg.content.startsWith('Ty: ') ? msg.content : `Ty: ${msg.content}`);
             }
         });
         
+        // Wymuś aktualizację ID i zapis
         currentSessionId = sessionCode;
         initSession();
-        isSessionPersisted = true;
-    } catch {
-        appendMessage('[CHUJOWY KOD, NIE MA TAKIEJ SESJI!]', true);
+        await saveSession(); // Nadpisz stary format danych
+    } catch (error) {
+        alert(`[CHUJOWO: ${error.message}]`);
     }
 }
 
@@ -204,7 +212,7 @@
             <span class="content">${DOMPurify.sanitize(marked.parse(message))}</span>
         `;
     } else {
-        messageDiv.textContent = `Ty: ${message}`;
+        messageDiv.textContent = `${message}`;
     }
     
     chatDiv.appendChild(messageDiv);
@@ -217,15 +225,7 @@
                 isStreaming = false;
                 if (currentController) {
                     currentController.abort();
-                }
-                if (currentReader) {
-                    try {
-                        await currentReader.cancel();
-                    } catch (e) {
-                        console.log('Stream już zamknięty');
-                    }
-                }
-                appendMessage('[Zatrzymano przez użytkownika]', true);
+                }               
             }
         });
 
@@ -253,7 +253,7 @@
                     }
                 ]),
                 model: 'deepseek-ai/DeepSeek-V3',
-                max_tokens: '4096'
+                max_tokens: 4096
             });
 
             const url = `${baseUrl}?${params.toString()}`;
@@ -307,13 +307,18 @@
                 }
 
             } catch (error) {
-        console.error('DEBUG:', error);
-        appendMessage(`[KURWA, API SIĘ WYPIEPRZYŁO: ${error.message}]`, true);
-    } finally {
+        // Sprawdź czy to nie jest celowe zatrzymanie
+        if (error.name === 'AbortError') {
+            console.log('Przerwano na życzenie użytkownika');
+            alert('[Zatrzymano przez użytkownika]');
+        } else {
+            console.error('Błąd:', error);
+            alert('[KURWA, COŚ SIĘ POSRAPAŁO!]');
+        } }   finally {
                 isProcessing = false;
                 isStreaming = false;
-        currentController = null;
-        currentReader = null;
+                currentController = null;
+                currentReader = null;
         
         // Zapisz tylko jeśli odpowiedź została ukończona
         if(!document.querySelector('.content:empty')) {
