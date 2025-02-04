@@ -136,16 +136,21 @@
     });
 
     try {
-        const encodedData = encodeURIComponent(JSON.stringify(history));
-        const response = await fetch(
-            `${KV_BASE}/save?id=${currentSessionId}&data=${encodedData}`
-        );
+        const response = await fetch(`${KV_BASE}/save`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: currentSessionId,
+                data: history
+            })
+        });
         
         if(!response.ok) throw new Error(await response.text());
         isSessionPersisted = true;
         
-        // Wymuś aktualizację TTL nawet jeśli była inna sesja
-        await updateSessionTTL(); 
+        await updateSessionTTL();
     } catch (error) {
         alert(`[KURWA, NIE ZAPISAŁO SIĘ: ${error.message}]`);
     }
