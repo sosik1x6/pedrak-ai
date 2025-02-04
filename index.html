@@ -86,7 +86,7 @@
         let isProcessing = false;
 
         let currentSessionId;
-        let isSessionPersisted = false;
+        let isSessionPersisted = false;        
         const KV_BASE_URL = 'https://pedrak-worker.sosik111111.workers.dev';
 
         let isInitialized = false;
@@ -253,7 +253,6 @@ async function saveSession() {
         
         if(response.ok) {
             saveSessionToCookie(currentSessionId);
-            isSessionPersisted = true;
         } else {
             throw new Error(await response.text());
         }
@@ -261,7 +260,6 @@ async function saveSession() {
         await updateSessionTTL();
     } catch (error) {
         alert(`[KURWA, NIE ZAPISAŁO SIĘ: ${error.message}]`);
-        isSessionPersisted = false;
     }
 }
 
@@ -293,7 +291,6 @@ async function loadSession() {
         currentSessionId = sessionCode;
         saveSessionToCookie(currentSessionId);
         document.getElementById('sessionCode').textContent = `ID SESJI: ${currentSessionId}`;
-        isSessionPersisted = true;
         
         await updateSessionTTL();
     } catch (error) {
@@ -327,11 +324,9 @@ async function loadSession() {
         
         if(response.ok) {
             saveSessionToCookie(currentSessionId); // Aktualizuj cookie
-            isSessionPersisted = true;
         }
         
         if(!response.ok) throw new Error(await response.text());
-        isSessionPersisted = true;
         
         await updateSessionTTL();
     } catch (error) {
