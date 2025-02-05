@@ -390,18 +390,11 @@ async function loadSession() {
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
     const stopButton = document.getElementById('stopButton');
-    stopButton.addEventListener('click', async () => {
+    stopButton.addEventListener('click', () => {
     if (isStreaming) {
         isStreaming = false;
         if (currentController) {
             currentController.abort();
-        }
-        if (currentReader) {
-            try {
-                await currentReader.cancel();
-            } catch (e) {
-                console.log('Anulowano strumień:', e);
-            }
         }
     }
 });
