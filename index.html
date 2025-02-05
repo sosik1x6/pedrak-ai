@@ -392,19 +392,17 @@ async function loadSession() {
     const stopButton = document.getElementById('stopButton');
     stopButton.addEventListener('click', async () => {
     if (isStreaming) {
-        isStreaming = false; // Immediately flag to stop
-        if (currentController) {
-            currentController.abort(); // Abort the fetch request
-        }
+        isStreaming = false; // Natychmiastowe zatrzymanie
+        if (currentController) currentController.abort(); // Anuluj żądanie HTTP
         if (currentReader) {
             try {
-                await currentReader.cancel(); // Cancel the reader stream
+                await currentReader.cancel(); // Wymuś zamknięcie strumienia
             } catch (e) {
-                console.log('Stream cancellation error:', e);
+                console.log('Błąd anulowania:', e);
             }
         }
     }
-    });
+});
 
     async function sendMessageToAPI(message) {
     if (isProcessing) return;
@@ -453,13 +451,14 @@ async function loadSession() {
         let isFirstChunk = true;
 
         while (isStreaming) {
-    let value, done;
     try {
-        ({ value, done } = await currentReader.read());
+        const { value, done } = await currentReader.read();
+        if (!isStreaming || done) break; // Natychmiastowe sprawdzenie flagi
+        
+        // Przetwarzanie danych...
     } catch (e) {
-        // Handle both abort and cancellation errors
         if (e.name === 'AbortError' || e.name === 'TypeError') {
-            break;
+            break; // Przechwyć WSZYSTKIE błędy anulowania
         }
         throw e;
     }
@@ -498,17 +497,18 @@ async function loadSession() {
         }
     } finally {
         // Sprzątanie zasobów
-        if (reader) {
-            try {
-                await reader.cancel();
-            } catch (e) {
-                console.log('Błąd anulowania strumienia:', e);
-            }
+        if (currentReader) { // Użyj właściwej zmiennej!
+        try {
+            await currentReader.cancel();
+        } catch (e) {
+            console.log('Błąd końcowego czyszczenia:', e);
+        }
         }
         
         isProcessing = false;
         isStreaming = false;
         currentController = null;
+        currentReader = null;
         
         // Zapisz sesję jeśli jest zawartość
         const contentElements = document.querySelectorAll('.content');
