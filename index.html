@@ -502,13 +502,14 @@ async function loadSession() {
 
     document.getElementById('stopButton').addEventListener('click', stopStreaming);
     function stopStreaming() {
+    currentReaderreader = response.body.getReader();
     if (isStreaming) {
         // Przerwij fetch i czytanie strumienia
         if(currentController) {
             currentController.abort();
         }
-        if(Reader) {
-            Reader.cancel().catch(() => {});
+        if(currentReader) {
+            currentReader.cancel().catch(() => {});
         }
         
         isStreaming = false;
