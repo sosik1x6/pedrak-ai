@@ -64,6 +64,17 @@
             height: 300px;
             width: 300px;            
         }
+
+        .mathjax-loading {
+    opacity: 0.5;
+    position: relative;
+}
+.mathjax-loading::after {
+    content: "⏳ Renderowanie wzorów...";
+    position: absolute;
+    right: 10px;
+    color: #fff;
+}
     </style>
 </head>
 <body>
@@ -79,6 +90,17 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
     <script>
+        // Konfiguracja DOMPurify dla MathJax
+        DOMPurify.addHook('afterSanitizeAttributes', function(node) {
+            if (node.tagName === 'MATH') {
+                node.setAttribute('xmlns', 'http://www.w3.org/1998/Math/MathML');
+            }
+            if (node.hasAttribute('display')) {
+                node.setAttribute('display', 'block');
+            }
+        });
+    </script>
+    <script>
         MathJax = {
           tex: {
             inlineMath: [['$', '$'], ['\\(', '\\)']],
@@ -91,6 +113,8 @@
       </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
     <script>
+
+        
 
         // Dodaj te zmienne globalne
 
@@ -152,6 +176,8 @@ async function loadSessionData() {
                     appendMessage(text);
                 }
             });
+
+            MathJax.typesetPromise([chatDiv]).catch(console.error);
         }
     } catch(error) {
         console.error('Błąd ładowania:', error);
@@ -383,11 +409,13 @@ async function loadSession() {
     
     chatDiv.appendChild(messageDiv);
     chatDiv.scrollTop = chatDiv.scrollHeight;
-    }
 
     MathJax.typesetPromise([messageDiv]).catch((err) => {
         console.error('MathJax błąd:', err);
     });
+    }
+
+    
 
     document.getElementById('newSessionButton').addEventListener('click', async () => {
     if(confirm('NA PEWNO CHCESZ NOWĄ SESJĘ? STARA ZOSTANIE WYJEBANA DO KOSZA!')) {
