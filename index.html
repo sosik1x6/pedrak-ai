@@ -135,9 +135,11 @@
         const KV_BASE = 'https://pedrak-worker.sosik111111.workers.dev';
 
         marked.setOptions({
-        breaks: true,
-        gfm: true
-        });
+  breaks: true,
+  gfm: true,
+  mangle: false,    // Wyłącz zamianę podkreśleń
+  headerIds: false  // Wyłącz automatyczne ID nagłówków
+});
 
         function initializeApp() {
     // 1. Pobierz sesję z ciasteczka
@@ -399,10 +401,16 @@ async function loadSession() {
     messageDiv.className = `message ${isBot ? 'api-response' : ''}`;
 
     if(isBot) {
-        messageDiv.innerHTML = `
-            <span class="prefix">Pedrak-AI: </span>
-            <span class="content">${DOMPurify.sanitize(marked.parse(message))}</span>
-        `;
+    messageDiv.innerHTML = `
+        <span class="prefix">Pedrak-AI: </span>
+        <span class="content">${DOMPurify.sanitize(marked.parse(message))}</span>
+    `;
+    
+    // Dodaj opóźnienie dla MathJax
+    setTimeout(() => {
+        MathJax.typesetPromise([messageDiv]).catch(console.error);
+    }, 50);
+
     } else {
         messageDiv.textContent = `${message}`;
     }
@@ -489,8 +497,8 @@ async function loadSession() {
             
             // Aktualizuj UI tylko jeśli strumień aktywny
             if (isStreaming) {
-                const contentSpan = apiResponseDiv.querySelector('.content');
-                contentSpan.innerHTML = DOMPurify.sanitize(marked.parse(buffer));
+                const escapedBuffer = buffer.replace(/\\(?!\\)/g, "\\\\"); // Podwójne backslashe
+                contentSpan.innerHTML = DOMPurify.sanitize(marked.parse(escapedBuffer));
                 
                 // Płynne przewijanie tylko dla pierwszego chunk
                 if (isFirstChunk) {
@@ -498,18 +506,22 @@ async function loadSession() {
                     isFirstChunk = false;
                 }
             }
+
+            if (isStreaming && buffer.includes('$')) {
+            MathJax.typesetPromise([apiResponseDiv]).catch(console.error);
+            }
+
         }
 
         // Obsłuż końcówkę strumienia
-        if (isStreaming) {
-    const contentSpan = apiResponseDiv.querySelector('.content');
-    contentSpan.innerHTML = DOMPurify.sanitize(marked.parse(buffer));
-    
-    // Odśwież MathJax dla nowej zawartości
-    MathJax.typesetPromise([contentSpan]).catch((err) => {
-        console.error('MathJax błąd:', err);
-        });
-        }
+        if (isStreaming && buffer.includes('$')) {
+    MathJax.typesetPromise([apiResponseDiv]).catch(console.error);
+}
+
+// W sekcji końcówki strumienia:
+MathJax.typesetPromise([apiResponseDiv]).then(() => {
+    apiResponseDiv.classList.remove('mathjax-loading');
+}).catch(console.error);
 
     } catch (error) {
         if (error.name === 'AbortError') {
