@@ -397,7 +397,7 @@ async function loadSession() {
             currentController.abort();
         }
     }
-});
+    });
 
     async function sendMessageToAPI(message) {
     if (isProcessing) return;
@@ -421,7 +421,6 @@ async function loadSession() {
 
     const url = `${baseUrl}?${params.toString()}`;
     
-    // Inicjalizacja nowego kontrolera i czytnika
     currentController = new AbortController();
     isStreaming = true;
     
@@ -436,19 +435,19 @@ async function loadSession() {
             signal: currentController.signal
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder('utf-8');
         let buffer = '';
         let isFirstChunk = true;
 
-        while (true) {
-            if (!isStreaming) break;
+        while (isStreaming) {
+            const { done, value } = await reader.read().catch(e => {
+                if (e.name === 'AbortError') return { done: true };
+                throw e;
+            });
             
-            const { done, value } = await reader.read();
             if (done) break;
 
             buffer += decoder.decode(value, { stream: true });
@@ -462,15 +461,12 @@ async function loadSession() {
             }
         }
 
-        // Obsłuż końcówkę strumienia tylko jeśli nie przerwano
-        if (isStreaming) {
-            const finalBuffer = decoder.decode();
-            if (finalBuffer) {
-                buffer += finalBuffer;
-                const contentSpan = apiResponseDiv.querySelector('.content');
-                contentSpan.innerHTML = DOMPurify.sanitize(marked.parse(buffer));
-                chatDiv.scrollTop = chatDiv.scrollHeight;
-            }
+        // Dodatkowe dekodowanie końcówki strumienia
+        const finalBuffer = decoder.decode();
+        if (finalBuffer && isStreaming) {
+            buffer += finalBuffer;
+            const contentSpan = apiResponseDiv.querySelector('.content');
+            contentSpan.innerHTML = DOMPurify.sanitize(marked.parse(buffer));
         }
 
     } catch (error) {
@@ -483,10 +479,13 @@ async function loadSession() {
             console.error('Błąd:', error);
             const contentSpan = document.querySelector('.api-response:last-child .content');
             if (contentSpan) {
-                contentSpan.innerHTML += '<br><em style="color:#ff4444">[BŁĄD POŁĄCZENIA]</em>';
+                contentSpan.innerHTML += '<br><em style="color:#ff4444">[BŁĄD: ${error.message}]</em>';
             }
         }
     } finally {
+        if (currentController) {
+            currentController.abort();
+        }
         isProcessing = false;
         isStreaming = false;
         currentController = null;
