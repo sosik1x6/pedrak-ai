@@ -456,8 +456,11 @@ async function loadSession() {
             let value, done;
             try {
                 ({ value, done } = await currentReader.read());
+                if (done || !isStreaming) break;
             } catch (e) {
-                if (e.name === 'AbortError') break;
+                if (e.name === 'AbortError' || e.name === 'TypeError') {
+                    break; // Przerwanie przy wszystkich rodzajach błędów anulowania
+                }
                 throw e;
             }
             
