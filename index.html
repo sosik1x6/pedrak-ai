@@ -74,6 +74,7 @@
     <div id="chat"></div>
     <input type="text" id="userInput" placeholder="Wpisz wiadomość..." />
     <button id="sendMessage">Wyślij</button>
+    <button id="stopButton">Stop</button>
     <h2 id="sessionCode">ID SESJI:</h2>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -388,7 +389,6 @@ async function loadSession() {
     chatDiv.appendChild(messageDiv);
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
-
     async function sendMessageToAPI(message) {
     if (isProcessing) return;
     isProcessing = true;
@@ -497,7 +497,30 @@ async function loadSession() {
             await updateSessionTTL();
         }
     }
-}
+    }
+
+    document.getElementById('stopButton').addEventListener('click', stopStreaming);
+    function stopStreaming() {
+    if (isStreaming) {
+        // Przerwij fetch i czytanie strumienia
+        if(currentController) {
+            currentController.abort();
+        }
+        if(Reader) {
+            Reader.cancel().catch(() => {});
+        }
+        
+        isStreaming = false;
+        isProcessing = false;
+        
+        // Oznacz ostatnią wiadomość jako zatrzymaną
+        const lastMessage = chatDiv.querySelector('.api-response:last-child .content');
+        if(lastMessage) {
+            lastMessage.innerHTML += ' <span data-stopped>(zatrzymane)</span>';
+        }
+    }
+    }
+
 
     </script>
 </body>
