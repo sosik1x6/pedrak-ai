@@ -74,6 +74,7 @@
     <div id="chat"></div>
     <input type="text" id="userInput" placeholder="Wpisz wiadomość..." />
     <button id="sendMessage">Wyślij</button>
+    <button id="stopButton">Stop</button>
     <h2 id="sessionCode">ID SESJI:</h2>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -92,6 +93,8 @@
         let currentController = null;
         let currentReader = null;
         let isStreaming = false;
+
+        
         const chatDiv = document.getElementById('chat');
         const userInput = document.getElementById('userInput');
         const sendMessageButton = document.getElementById('sendMessage');
@@ -431,7 +434,7 @@ async function loadSession() {
             throw new Error(`HTTP ${response.status}: ${await response.text()}`);
         }
 
-        reader = response.body.getReader();
+        currentReader = response.body.getReader();
         const decoder = new TextDecoder('utf-8');
         let buffer = '';
         let isFirstChunk = true;
@@ -467,6 +470,27 @@ async function loadSession() {
                 chatDiv.scrollTop = chatDiv.scrollHeight;
             }
         }
+
+        function stopStreaming() {
+    if (isStreaming) {
+        // Przerwij fetch i czytanie strumienia
+        if(currentController) {
+            currentController.abort();
+        }
+        if(currentReader) {
+            currentReader.cancel().catch(() => {});
+        }
+        
+        isStreaming = false;
+        isProcessing = false;
+        
+        // Oznacz ostatnią wiadomość jako zatrzymaną
+        const lastMessage = chatDiv.querySelector('.api-response:last-child .content');
+        if(lastMessage) {
+            lastMessage.innerHTML += ' <span data-stopped>(zatrzymane)</span>';
+        }
+    }
+    }
 
     } catch (error) {
         if (error.name === 'AbortError') {
