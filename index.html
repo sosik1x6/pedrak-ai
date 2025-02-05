@@ -469,59 +469,32 @@ async function loadSession() {
     
     try {
         const apiResponseDiv = document.createElement('div');
-        apiResponseDiv.className = 'message api-response';
+        apiResponseDiv.className = 'message api-response mathjax-loading';
         apiResponseDiv.innerHTML = '<span class="prefix">Pedrak-AI: </span><span class="content"></span>';
         chatDiv.appendChild(apiResponseDiv);
 
-        const response = await fetch(url, {
-            method: 'GET',
-            signal: currentController.signal
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-        }
-
-        reader = response.body.getReader();
-        const decoder = new TextDecoder('utf-8');
+        const response = await fetch(url, { signal: currentController.signal });
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
         let buffer = '';
-        let isFirstChunk = true;
 
         while (isStreaming) {
             const { done, value } = await reader.read();
-            
-            // Przerwij jeśli strumień zakończony lub zatrzymany
-            if (done || !isStreaming) break;
+            if (done) break;
 
             buffer += decoder.decode(value, { stream: true });
+            const parsed = DOMPurify.sanitize(marked.parse(buffer.replace(/\\(?!\\)/g, "\\\\")));
             
-            // Aktualizuj UI tylko jeśli strumień aktywny
-            if (isStreaming) {
-                const escapedBuffer = buffer.replace(/\\(?!\\)/g, "\\\\"); // Podwójne backslashe
-                contentSpan.innerHTML = DOMPurify.sanitize(marked.parse(escapedBuffer));
-                
-                // Płynne przewijanie tylko dla pierwszego chunk
-                if (isFirstChunk) {
-                    chatDiv.scrollTop = chatDiv.scrollHeight;
-                    isFirstChunk = false;
-                }
+            apiResponseDiv.querySelector('.content').innerHTML = parsed;
+            
+            if (buffer.includes('$')) {
+                await MathJax.typesetPromise([apiResponseDiv]);
             }
-
-            if (isStreaming && buffer.includes('$')) {
-            MathJax.typesetPromise([apiResponseDiv]).catch(console.error);
-            }
-
         }
 
-        // Obsłuż końcówkę strumienia
-        if (isStreaming && buffer.includes('$')) {
-    MathJax.typesetPromise([apiResponseDiv]).catch(console.error);
-}
-
-// W sekcji końcówki strumienia:
-MathJax.typesetPromise([apiResponseDiv]).then(() => {
-    apiResponseDiv.classList.remove('mathjax-loading');
-}).catch(console.error);
+        const finalContent = DOMPurify.sanitize(marked.parse(buffer.replace(/\\/g, "\\\\")));
+        apiResponseDiv.querySelector('.content').innerHTML = finalContent;
+        await MathJax.typesetPromise([apiResponseDiv]);
 
     } catch (error) {
         if (error.name === 'AbortError') {
@@ -532,18 +505,10 @@ MathJax.typesetPromise([apiResponseDiv]).then(() => {
             alert('[KURWA, COŚ SIĘ POSRAPAŁO!]');
         }
     } finally {
-        // Sprzątanie zasobów
-        if (reader) {
-            try {
-                await reader.cancel();
-            } catch (e) {
-                console.log('Błąd anulowania strumienia:', e);
-            }
-        }
-        
+        apiResponseDiv.classList.remove('mathjax-loading');
         isProcessing = false;
         isStreaming = false;
-        currentController = null;
+    }
         
         // Zapisz sesję jeśli jest zawartość
         const contentElements = document.querySelectorAll('.content');
@@ -551,7 +516,6 @@ MathJax.typesetPromise([apiResponseDiv]).then(() => {
             await saveSession();
             await updateSessionTTL();
         }
-    }
     }
 
     </script>
