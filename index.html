@@ -505,10 +505,18 @@ async function loadSession() {
             alert('[KURWA, COŚ SIĘ POSRAPAŁO!]');
         }
     } finally {
-        apiResponseDiv.classList.remove('mathjax-loading');
+        // Sprzątanie zasobów
+        if (reader) {
+            try {
+                await reader.cancel();
+            } catch (e) {
+                console.log('Błąd anulowania strumienia:', e);
+            }
+        }
+        
         isProcessing = false;
         isStreaming = false;
-    }
+        currentController = null;
         
         // Zapisz sesję jeśli jest zawartość
         const contentElements = document.querySelectorAll('.content');
@@ -516,6 +524,7 @@ async function loadSession() {
             await saveSession();
             await updateSessionTTL();
         }
+    }
     }
 
     </script>
