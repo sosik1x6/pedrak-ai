@@ -393,21 +393,16 @@ async function loadSession() {
     stopButton.addEventListener('click', async () => {
     if (isStreaming) {
         isStreaming = false;
-
         if (currentController) {
-            currentController.abort(); 
+            currentController.abort();
         }
-
         if (currentReader) {
             try {
                 await currentReader.cancel();
             } catch (e) {
-                console.log('Błąd anulowania czytania:', e);
+                console.log('Anulowano strumień:', e);
             }
         }
-
-        // Wymuś natychmiastowe wyczyszczenie bufora
-        chatDiv.querySelector('.api-response:last-child .content').innerHTML += '<br><span data-stopped>⛔ Zatrzymano przez użytkownika</span>';
     }
     });
 
@@ -458,17 +453,26 @@ async function loadSession() {
         let isFirstChunk = true;
 
         while (isStreaming) {
-    let value, done;
-    try {
-        ({ value, done } = await currentReader.read());
-        if (!isStreaming || done) break; // Sprawdź isStreaming przed dalszym odczytem!
-    } catch (e) {
-        if (e.name === 'AbortError' || e.name === 'TypeError') {
-            break;
+            let value, done;
+            try {
+                ({ value, done } = await currentReader.read());
+            } catch (e) {
+                if (e.name === 'AbortError') break;
+                throw e;
+            }
+            
+            if (done || !isStreaming) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            
+            const contentSpan = apiResponseDiv.querySelector('.content');
+            contentSpan.innerHTML = DOMPurify.sanitize(marked.parse(buffer));
+            
+            if (isFirstChunk) {
+                chatDiv.scrollTop = chatDiv.scrollHeight;
+                isFirstChunk = false;
+            }
         }
-        throw e;
-    }
-}
 
         // Końcówka strumienia tylko jeśli nie przerwano
         if (isStreaming) {
@@ -490,20 +494,22 @@ async function loadSession() {
             alert('[KURWA, COŚ SIĘ POSRAPAŁO!]');
         }
     } finally {
-        if (currentReader) {
+        // Sprzątanie zasobów
+        if (reader) {
             try {
-                await currentReader.cancel();
+                await reader.cancel();
             } catch (e) {
-                console.log('Błąd anulowania:', e);
+                console.log('Błąd anulowania strumienia:', e);
             }
         }
         
         isProcessing = false;
         isStreaming = false;
         currentController = null;
-        currentReader = null;
         
-        if (document.querySelector('.api-response:last-child .content')?.innerHTML) {
+        // Zapisz sesję jeśli jest zawartość
+        const contentElements = document.querySelectorAll('.content');
+        if (contentElements.length > 0 && contentElements[contentElements.length - 1].innerHTML !== '') {
             await saveSession();
             await updateSessionTTL();
         }
