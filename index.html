@@ -74,11 +74,21 @@
     <div id="chat"></div>
     <input type="text" id="userInput" placeholder="Wpisz wiadomość..." />
     <button id="sendMessage">Wyślij</button>
-    <button id="stopButton">Stop</button>
     <h2 id="sessionCode">ID SESJI:</h2>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
+    <script>
+        MathJax = {
+          tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']]
+          },
+          options: {
+            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+          }
+        };
+      </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
     <script>
 
@@ -375,6 +385,10 @@ async function loadSession() {
     chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 
+    MathJax.typesetPromise([messageDiv]).catch((err) => {
+        console.error('MathJax błąd:', err);
+    });
+
     document.getElementById('newSessionButton').addEventListener('click', async () => {
     if(confirm('NA PEWNO CHCESZ NOWĄ SESJĘ? STARA ZOSTANIE WYJEBANA DO KOSZA!')) {
         currentSessionId = generateSessionId();
@@ -460,13 +474,13 @@ async function loadSession() {
 
         // Obsłuż końcówkę strumienia
         if (isStreaming) {
-            const finalBuffer = decoder.decode();
-            if (finalBuffer) {
-                buffer += finalBuffer;
-                const contentSpan = apiResponseDiv.querySelector('.content');
-                contentSpan.innerHTML = DOMPurify.sanitize(marked.parse(buffer));
-                chatDiv.scrollTop = chatDiv.scrollHeight;
-            }
+    const contentSpan = apiResponseDiv.querySelector('.content');
+    contentSpan.innerHTML = DOMPurify.sanitize(marked.parse(buffer));
+    
+    // Odśwież MathJax dla nowej zawartości
+    MathJax.typesetPromise([contentSpan]).catch((err) => {
+        console.error('MathJax błąd:', err);
+        });
         }
 
     } catch (error) {
@@ -499,30 +513,6 @@ async function loadSession() {
         }
     }
     }
-
-    document.getElementById('stopButton').addEventListener('click', stopStreaming);
-    function stopStreaming() {
-    currentReaderreader = response.body.getReader();
-    if (isStreaming) {
-        // Przerwij fetch i czytanie strumienia
-        if(currentController) {
-            currentController.abort();
-        }
-        if(currentReader) {
-            currentReader.cancel().catch(() => {});
-        }
-        
-        isStreaming = false;
-        isProcessing = false;
-        
-        // Oznacz ostatnią wiadomość jako zatrzymaną
-        const lastMessage = chatDiv.querySelector('.api-response:last-child .content');
-        if(lastMessage) {
-            lastMessage.innerHTML += ' <span data-stopped>(zatrzymane)</span>';
-        }
-    }
-    }
-
 
     </script>
 </body>
