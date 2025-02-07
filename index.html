@@ -6,140 +6,63 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <title>Pedrak-AI</title>
     <style>
-        body {
-            background-color: #241a16;
-            color: #fff3e0;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-        }
-    
-        #pedrakphot {
-            display: block;
-            margin: 0 auto 30px;
-            height: 300px;
-            width: 300px;
-            object-fit: contain;
-        }
-    
-        h1 {
-            color: #ed4e09;
-            text-align: center;
-            font-size: 2.5em;
-            margin-bottom: 30px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-    
         #chat {
-            background: #362520;
-            border-radius: 12px;
-            padding: 25px;
-            margin: 20px 0;
-            width: 90%;
-            max-width: 1000px;
-            height: 500px;
-            overflow-y: auto;
-            border: 1px solid #4a3a32;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
         }
-    
         .message {
-            margin: 15px 0;
-            padding: 12px 20px;
-            border-radius: 8px;
-            background: #2e211b;
-            border: 1px solid #3d2d26;
+            margin: 5px 0;
         }
-    
-        .api-response {
-            background: #362520;
-            border-color: #ed4e09;
+        
+        .api-response strong {
+            font-weight: bold;
         }
-    
-        #userInput {
-            width: 75%;
+
+        .api-response em {
+            font-style: italic;
+        }
+
+        .api-response pre {
+            background: #2d2d2d;
+            color: #fff;
             padding: 15px;
             border-radius: 8px;
-            border: 2px solid #4a3a32;
-            background: #2e211b;
-            color: #fff3e0;
-            font-size: 16px;
-            margin-right: 10px;
-            transition: all 0.3s ease;
+            margin: 10px 0;
+            overflow-x: auto;
         }
-    
-        #userInput:focus {
-            outline: none;
-            border-color: #ed4e09;
-            box-shadow: 0 0 8px rgba(237, 78, 9, 0.3);
-        }
-    
-        button {
-            background: #ed4e09;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-    
-        button:hover {
-            background: #ff6b35;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(237, 78, 9, 0.3);
-        }
-    
-        #sessionCode {
-            color: #ed4e09;
-            text-align: center;
-            margin: 20px 0;
-            font-family: monospace;
-            font-size: 1.2em;
-        }
-    
-        .api-response pre {
-            background: #1e1510;
-            border: 1px solid #4a3a32;
-            border-radius: 6px;
-        }
-    
+
         .api-response code {
-            background: #1e1510;
-            padding: 3px 6px;
-            border-radius: 4px;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            background: #2d2d2d;
+            padding: 2px 5px;
+            border-radius: 3px;
         }
-    
+
         .api-response blockquote {
-            border-left: 3px solid #ed4e09;
-            color: #c9b7a8;
+            border-left: 4px solid #666;
+            margin: 10px 0;
+            padding-left: 15px;
+            color: #fff;
         }
-    
-        @media (max-width: 768px) {
-            body {
-                padding: 15px;
-            }
-            
-            #chat {
-                width: 100%;
-                height: 400px;
-                padding: 15px;
-            }
-            
-            #userInput {
-                width: 65%;
-                padding: 12px;
-            }
-            
-            button {
-                padding: 10px 20px;
-            }
+        
+        [data-stopped] {
+            color: #ff4444;
+            font-style: italic;
+        }
+
+        [data-error] {
+            color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+            padding: 5px;
+            border-radius: 3px;
+        }      
+
+        #pedrakphot {
+            height: 300px;
+            width: 300px;            
         }
     </style>
 </head>
