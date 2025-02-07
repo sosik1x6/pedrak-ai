@@ -306,16 +306,11 @@ async function loadSessionData() {
     });
 
     try {
-        const response = await fetch(`${KV_BASE}/save`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                id: currentSessionId,
-                data: history
-            })
-        });
+        const response = await fetch(`${KV_BASE}/load`, {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({ id: currentSessionId })
+});
         
         if(response.ok) {
             saveSessionToCookie(currentSessionId); // Aktualizuj cookie
@@ -355,7 +350,7 @@ async function loadSessionData() {
         userInput.value = '';
         sendMessageToAPI(message);
     }
-});
+    });
 
         function appendMessage(content, isBot) {
             const messageDiv = document.createElement('div');
@@ -381,7 +376,7 @@ async function loadSessionData() {
 
     
 
-        document.getElementById('newSessionButton').addEventListener('click', async () => {
+    document.getElementById('newSessionButton').addEventListener('click', async () => {
     if(confirm('NA PEWNO CHCESZ NOWĄ SESJĘ? STARA ZOSTANIE WYJEBANA DO KOSZA!')) {
         currentSessionId = generateSessionId();
         saveSessionToCookie(currentSessionId);
@@ -389,7 +384,7 @@ async function loadSessionData() {
         chatHistory = [];
         document.getElementById('sessionCode').textContent = `ID SESJI: ${currentSessionId}`;
     }
-});
+    });
 
     
     chatDiv.appendChild(messageDiv);
