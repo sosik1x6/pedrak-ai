@@ -4,78 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="pedrakstyle.css">
     <title>Pedrak-AI</title>
-    <style>
-        #chat {
-            border: 1px solid #ccc;
-            padding: 10px;
-            height: 300px;
-            overflow-y: scroll;
-        }
-        .message {
-            margin: 5px 0;
-        }
-        
-        .api-response strong {
-            font-weight: bold;
-        }
-
-        .api-response em {
-            font-style: italic;
-        }
-
-        .api-response pre {
-            background: #2d2d2d;
-            color: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            overflow-x: auto;
-        }
-
-        .api-response code {
-            color: #fff;
-            font-family: 'Courier New', Courier, monospace;
-            background: #2d2d2d;
-            padding: 2px 5px;
-            border-radius: 3px;
-        }
-
-        .api-response blockquote {
-            border-left: 4px solid #666;
-            margin: 10px 0;
-            padding-left: 15px;
-            color: #fff;
-        }
-        
-        [data-stopped] {
-            color: #ff4444;
-            font-style: italic;
-        }
-
-        [data-error] {
-            color: #ff0000;
-            background: rgba(255, 0, 0, 0.1);
-            padding: 5px;
-            border-radius: 3px;
-        }      
-
-        #pedrakphot {
-            height: 300px;
-            width: 300px;            
-        }
-    </style>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="icon" type="image/x-icon" href="favicon.ico">
+        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+        <title>Pedrak-AI</title>
 </head>
 <body>
+<div class="container">
     <img src="pedrak2.png" alt="pedrak" id="pedrakphot">
     <h1>Pedrak-AI</h1>
-    <button id="loadButton">Wczytaj</button>
-    <button id="newSessionButton">Nowa Sesja</button>
-    <div id="chat"></div>
-    <input type="text" id="userInput" placeholder="Wpisz wiadomość..." />
-    <button id="sendMessage">Wyślij</button>
-    <h2 id="sessionCode">ID SESJI:</h2>
+    
+    <div id="topButtons">
+        <button id="loadButton"><i class="fas fa-folder-open"></i> Wczytaj Sesję</button>
+        <button id="newSessionButton"><i class="fas fa-plus-circle"></i> Nowa Sesja</button>
+        <button id="downloadSessionButton"><i class="fa-solid fa-download"></i> Pobierz Sesję</button>
+    </div>
 
+    <div id="chat"></div>
+
+    <input type="text" id="userInput" placeholder="Wpisz wiadomość..." />
+
+    <div id="bottomButtons">
+        <button id="sendMessage"><i class="fas fa-paper-plane"></i> Wyślij</button>
+        <button id="stopButton"><i class="fas fa-stop-circle"></i> Stop</button>
+        <button id="uploadButton"><i class="fas fa-paperclip"></i> Załącznik</button>
+        <button id="continueMessage"><i class="fas fa-play-circle"></i> Kontynuuj</button>
+    </div>
+
+    <h2 id="sessionCode">ID SESJI:</h2>
+    
+    <div style="text-align: center; margin: 20px 0;">
+        <a href="https://ko-fi.com/sosik">
+            <img src="https://storage.ko-fi.com/cdn/kofi2.png?v=3" alt="donate" style="height: 40px;">
+        </a>
+    </div>
+</div>
+
+
+    <script src="https://kit.fontawesome.com/42c0ae8c3e.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
     <script>
