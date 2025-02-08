@@ -148,7 +148,7 @@
             }
     
             .message {
-                max-width: 70%;
+                max-width: 100%;
                 padding: 15px 20px;
                 border-radius: 3px;
                 animation: messageAppear 0.3s ease;
