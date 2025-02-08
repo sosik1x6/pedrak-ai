@@ -225,6 +225,9 @@
             }
     
             @media (max-width: 768px) {
+
+            #chat {margin: 0;}
+            
             .container {
                 padding: 20px;
                 border-left: none;
