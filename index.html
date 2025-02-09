@@ -88,6 +88,14 @@
 
         const KV_BASE = 'https://pedrak-worker.sosik111111.workers.dev';
 
+        document.addEventListener('keydown', function(event) {
+    // Obsługa Ctrl+Enter w polu input
+    if (event.target.id === 'userInput' && event.ctrlKey && event.key === 'Enter') {
+        event.preventDefault();
+        document.getElementById('sendMessage').click();
+    }
+    });
+
         marked.setOptions({
   breaks: true,
   gfm: true,
