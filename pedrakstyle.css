@@ -161,6 +161,7 @@ color:  #bee2d9;
     border-left: 3px solid var(--secondary-color);
     background: linear-gradient(90deg, rgba(77,194,163,0.1) 0%, transparent 100%);
     z-index: 2;
+    font-size: 0.95rem;
 }
 
 .user-message {
@@ -256,6 +257,7 @@ caret-color: var(--secondary-color);
 
 .prefix {
     font-weight: bolder;
+    font-size: 1rem;
 }
 
 @keyframes messageAppear {
