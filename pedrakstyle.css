@@ -55,7 +55,7 @@ body::before {
     box-shadow: 0 0 30px rgba(77,194,163,0.1);
     padding: 30px;
     position: relative;
-    overflow: hidden;
+    overflow: auto;
     margin-bottom: 0;
 }
 
@@ -224,7 +224,6 @@ hr::after {
 
 #userInput {
 width: 100%;
-padding: 20px 25px;
 border: 2px solid rgba(77,194,163,0.3);
 border-radius: 4px;
 font-size: 1.1rem;
@@ -234,6 +233,10 @@ background: var(--accent-color);
 color: var(--text-color);
 font-family: 'IBM Plex Mono', monospace;
 caret-color: var(--secondary-color);
+resize: none;
+overflow: hidden;
+padding: 15px 20px;
+height: auto;
 }
 
 #userInput:focus {
@@ -373,11 +376,6 @@ button {
     justify-content: center;
     padding: 12px 15px;
     font-size: 0.9rem;
-}
-
-#userInput {
-    padding: 15px 20px;
-    min-height: 30px;
 }
 
 h1 {

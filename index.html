@@ -28,7 +28,7 @@
     <div id="chat">
     </div>
 
-    <input type="text" id="userInput" placeholder="Wpisz wiadomość..." />
+    <textarea type="text" id="userInput" placeholder="Wpisz wiadomość..."></textarea>
 
     <div id="bottomButtons">
         <button id="sendMessage"><i class="fas fa-paper-plane"></i> Wyślij</button>
@@ -94,6 +94,12 @@
         sendMessageButton.click();
     }
     });
+    const textarea = document.getElementById('userInput');
+
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto'; // Najpierw zresetuj wysokość, żeby działało jak trzeba
+            this.style.height = this.scrollHeight + 'px'; // Ustaw wysokość na podstawie zawartości
+        });
 
         marked.setOptions({
   breaks: true,
