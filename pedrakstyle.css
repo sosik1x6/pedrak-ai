@@ -356,6 +356,7 @@
             z-index: 1;
             padding: 12px 15px;
             width: 100%;
+            font-size: 0.6rem;
         }
 
             button {
@@ -376,11 +377,11 @@
 
             #pedrakphot {
                 position: absolute;
-                top: 100%;
+                top: 60%;
                 left: 50%;
                 transform: translate(-50%, -50%);
                 pointer-events: none;
-                width: 150px;
+                width: 200px;
                 opacity: 0.1;
             }
         }
