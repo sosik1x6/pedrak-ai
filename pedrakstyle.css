@@ -41,8 +41,8 @@ body::before {
         transparent 1px,
         transparent 2px
     );
-    pointer-events: none;
-    z-index: 999;
+    pointer-events: none; 
+    z-index: 999; /* Ensure this is above the content */ 
 }
 
 .container {
