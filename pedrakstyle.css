@@ -27,6 +27,7 @@
             }
     
             body::before {
+                margin-bottom: 0;
                 content: "";
                 position: fixed;
                 top: 0;
@@ -46,7 +47,7 @@
     
             .container {
                 max-width: 1200px;
-                height: 100%;
+                height: 100vh;
                 margin: 0 auto;
                 background: var(--primary-color);
                 border-right: 1px solid rgba(77,194,163,0.3);
@@ -54,8 +55,8 @@
                 box-shadow: 0 0 30px rgba(77,194,163,0.1);
                 padding: 30px;
                 position: relative;
-                overflow: hidden;
-                margin-top: 0;
+                overflow: scroll;
+                margin-bottom: 0;
             }
     
             .container::after {
@@ -68,6 +69,7 @@
                 background: var(--glow-effect);
                 pointer-events: none;
                 z-index: 0;
+                margin-bottom: 0;
             }
     
             #pedrakphot {
@@ -96,9 +98,9 @@
             #topButtons, #bottomButtons {
                 display: flex;
                 gap: 10px;
-                margin: 15px 0;
+                margin: 0 0;
                 flex-wrap: wrap;
-                justify-content: center;
+                justify-content: left;
                 position: relative;
                 z-index: 1;
             }
@@ -106,8 +108,7 @@
             button {
             background: linear-gradient(145deg, var(--secondary-color) 0%, #3da389 100%);
             color: var(--primary-color);
-            border: none;
-            padding: 15px 25px;
+            padding: 5px 5px;
             border-radius: 4px;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -122,9 +123,13 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
 
+        #donateButton {
+            background: gold;
+            border: 1px solid rgba(235, 218, 66, 0.521);
+        }
+
         button:hover {
             background: linear-gradient(145deg, #3da389 0%, var(--secondary-color) 100%);
-            transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(77,194,163,0.3);
         }
     
@@ -171,6 +176,14 @@
                 background: linear-gradient(90deg, rgba(77,194,163,0.1) 0%, var(--accent-color) 100%);
                 margin-right: auto;
                 box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+            }
+
+            ol {
+                margin-left: 40px;
+            }
+
+            ul {
+                margin-left: 20px;
             }
             
             hr {
@@ -230,9 +243,10 @@
                 color: var(--secondary-color);
                 font-size: 0.9rem;
                 text-align: center;
-                margin-top: 25px;
                 opacity: 0.7;
                 font-family: 'Courier New', monospace;
+                flex: 1 1 100%;
+                justify-content: center;
             }
     
             .api-response pre {
@@ -265,12 +279,22 @@
     
             @media (max-width: 768px) {
 
-            #chat {margin: 0;}
+            #chat {
+                margin: 0;
+                width: 100%;
+                padding: none;
+            }
             
+            .message {
+                width: 100%;
+                margin: 0;
+            }
+
             .container {
-                padding: 20px;
+                padding: none;
                 border-left: none;
                 border-right: none;
+                margin: 0;
             }
 
             #pedrakphot {
@@ -297,7 +321,7 @@
 
             #userInput {
                 padding: 15px 20px;
-                min-height: 50px;
+                min-height: 30px;
             }
         }
     
