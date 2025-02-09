@@ -321,8 +321,15 @@
                 margin: 0;
                 width: 100%;
                 padding: 0;
+                border-left: none;
+                border-right: none;
+                border-radius: 0px;
             }
             
+            .user-message{
+                text-align: right;
+            }
+
             .message {
                 margin: 0;
                 font-size: 0.88rem;
