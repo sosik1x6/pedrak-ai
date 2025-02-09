@@ -55,7 +55,7 @@
                 box-shadow: 0 0 30px rgba(77,194,163,0.1);
                 padding: 30px;
                 position: relative;
-                overflow: scroll;
+                overflow: hidden;
                 margin-bottom: 0;
             }
     
@@ -239,16 +239,6 @@
                 box-shadow: 0 0 0 3px rgba(77,194,163,0.2);
             }
     
-            #sessionCode {
-                color: var(--secondary-color);
-                font-size: 0.9rem;
-                text-align: center;
-                opacity: 0.7;
-                font-family: 'Courier New', monospace;
-                flex: 1 1 100%;
-                justify-content: center;
-            }
-    
             .api-response pre {
                 background: var(--primary-color);
                 color: var(--retro-green);
@@ -276,6 +266,47 @@
                     transform: translateY(0);
                 }
             }
+           
+            #sessionCode {
+                color: red;
+                font-size: 1.2rem;
+                text-align: center;
+                opacity: 0.7;
+                font-family: 'Courier New', monospace;
+                border: 2px solid rgba(255, 0, 0, 0.5);
+                border-radius: 4px;
+                display: flex;
+                gap: 10px;
+                margin: 0 0;
+                flex-wrap: wrap;
+                justify-content: left;
+                z-index: 1;
+                padding: 10px;
+                align-items: center;
+                position: relative;
+                background: rgba(255, 0, 0, 0.05);
+                transition: all 0.3s ease;
+                box-shadow: 0 0 10px rgba(255, 0, 0, 0);
+            }
+            
+            #sessionCode:hover {
+                opacity: 1;
+                border-color: rgba(255, 0, 0, 0.8);
+                box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+                background: rgba(255, 0, 0, 0.1);
+            }
+            
+            @keyframes glow-pulse {
+                0% {
+                    box-shadow: 0 0 5px rgba(255, 0, 0, 0.2);
+                }
+                50% {
+                    box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+                }
+                100% {
+                    box-shadow: 0 0 5px rgba(255, 0, 0, 0.2);
+                }
+            }
     
             @media (max-width: 768px) {
 
@@ -295,6 +326,7 @@
                 border-left: none;
                 border-right: none;
                 margin: 0;
+                overflow-y: scroll;
             }
 
             #pedrakphot {
@@ -310,6 +342,18 @@
             justify-content: flex-start;
             position: relative;
             z-index: 1;
+        }
+
+        #sessionCode {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+            padding: 12px 15px;
+            width: 100%;
         }
 
             button {
