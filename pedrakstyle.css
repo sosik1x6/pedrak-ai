@@ -261,6 +261,14 @@ height: auto;
 .prefix {
     font-weight: bolder;
     font-size: 1rem;
+
+    display: flex;
+    align-items: center; /* Centruje w pionie */
+}
+
+.prefix img {
+    width: 38px;
+    padding-right: 10px;
 }
 
 @keyframes messageAppear {
@@ -353,7 +361,6 @@ display: flex;
 gap: 10px;
 margin: 15px 0;
 flex-wrap: wrap;
-justify-content: flex-start;
 position: relative;
 z-index: 1;
 }
