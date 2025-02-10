@@ -261,7 +261,9 @@ height: auto;
 .prefix {
     font-weight: bolder;
     font-size: 1rem;
+}
 
+#pedrakp {
     display: flex;
     align-items: center; /* Centruje w pionie */
 }

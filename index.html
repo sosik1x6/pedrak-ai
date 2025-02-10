@@ -141,7 +141,7 @@ async function loadSession() {
                 const div = document.createElement('div');
                 div.className = 'message api-response';
                 div.innerHTML = `
-                    <span class="prefix"><img src="pedrak2lil.png" alt="pedrak2lil" id="pedrakphotlil">Pedrak-AI: </span>
+                    <span class="prefix" id="pedrakp"> <img src="pedrak2lil.png" alt="pedrak2lil" id="pedrakphotlil">Pedrak-AI: </span>
                     <span class="content">${DOMPurify.sanitize(msg.content)}</span>
                 `;
                 chatDiv.appendChild(div);
@@ -179,7 +179,7 @@ async function loadSessionData() {
                 const div = document.createElement('div');
                 div.className = 'message api-response';
                 div.innerHTML = `
-                    <span class="prefix"><img src="pedrak2lil.png" alt="pedrak2lil" id="pedrakphotlil">Pedrak-AI: </span>
+                    <span class="prefix" id="pedrakp"><img src="pedrak2lil.png" alt="pedrak2lil" id="pedrakphotlil">Pedrak-AI: </span>
                     <span class="content">${DOMPurify.sanitize(msg.content)}</span>
                 `;
                 chatDiv.appendChild(div);
@@ -259,7 +259,7 @@ async function loadSessionData() {
                     const div = document.createElement('div');
                     div.className = 'message api-response';
                     div.innerHTML = `
-                        <span class="prefix"><img src="pedrak2lil.png" alt="pedrak2lil" id="pedrakphotlil">Pedrak-AI: </span>
+                        <span class="prefix" id="pedrakp"><img src="pedrak2lil.png" alt="pedrak2lil" id="pedrakphotlil">Pedrak-AI: </span>
                         <span class="content">${DOMPurify.sanitize(msg.content)}</span>
                     `;
                     chatDiv.appendChild(div);
@@ -345,7 +345,7 @@ async function saveSession() {
 
     if(isBot) {
         messageDiv.innerHTML = `
-            <span class="prefix"><img src="pedrak2lil.png" alt="pedrak2lil" id="pedrakphotlil">Pedrak-AI: </span>
+            <span class="prefix" id="pedrakp"><img src="pedrak2lil.png" alt="pedrak2lil" id="pedrakphotlil">Pedrak-AI: </span>
             <span class="content">${DOMPurify.sanitize(marked.parse(message))}</span>
         `;
     } else {
@@ -414,7 +414,7 @@ async function saveSession() {
     try {
         const apiResponseDiv = document.createElement('div');
         apiResponseDiv.className = 'message api-response mathjax-loading';
-        apiResponseDiv.innerHTML = '<span class="prefix"><img src="pedrak2lil.png" alt="pedrak2lil" id="pedrakphotlil">Pedrak-AI: </span><span class="content"></span>';
+        apiResponseDiv.innerHTML = '<span class="prefix" id="pedrakp"><img src="pedrak2lil.png" alt="pedrak2lil" id="pedrakphotlil">Pedrak-AI: </span><span class="content"></span>';
         chatDiv.appendChild(apiResponseDiv);
 
         const response = await fetch(url, { signal: currentController.signal });
