@@ -55,15 +55,19 @@
         });
     </script>
     <script>
-        MathJax = {
-          tex: {
-            inlineMath: [['$', '$'], ['\\(', '\\)']],
-            displayMath: [['$$', '$$'], ['\\[', '\\]']]
-          },
-          options: {
-            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
-          }
-        };
+       MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    enableMenu: false // Poprawia wydajność
+  },
+  startup: {
+    typeset: false // Wyłącz auto-formatowanie
+  }
+};
         
       </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
@@ -344,27 +348,31 @@ async function saveSession() {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isBot ? 'api-response' : 'user-message'}`;
 
-    if(isBot) {
+    if (isBot) {
         messageDiv.innerHTML = `
             <span class="prefix" id="pedrakp"><img src="pedrak2lil.png" alt="pedrak2lil" id="pedrakphotlil">Pedrak-AI: </span>
             <span class="content">${DOMPurify.sanitize(marked.parse(message))}</span>
         `;
     } else {
-        // Usuwamy "Ty: " z początku wiadomości jeśli istnieje
         const cleanMessage = message.startsWith('Ty: ') ? message.slice(4) : message;
         messageDiv.innerHTML = `
             <span class="prefix"><p>Ty: </p></span>
             <span class="content">${DOMPurify.sanitize(cleanMessage)}</span>
         `;
     }
-    
+
     chatDiv.appendChild(messageDiv);
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
-    if(isBot) {
-        setTimeout(() => {
-            MathJax.typesetPromise([messageDiv]).catch(console.error);
-        }, 50);
+    // Ręczne wywołanie MathJax dla nowej wiadomości
+    if (isBot) {
+        setTimeout(async () => {
+            try {
+                await MathJax.typesetPromise([messageDiv]);
+            } catch (error) {
+                console.error('Błąd podczas renderowania MathJax:', error);
+            }
+        }, 100); // Opóźnienie 100ms dla pewności
     }
 }
 
@@ -454,17 +462,14 @@ async function saveSession() {
       }
     }
 
-    // Renderuj MathJax dopiero po zakończeniu strumienia
     apiResponseDiv.classList.remove('mathjax-loading');
-    const tempContainer = document.createElement('div');
-    tempContainer.innerHTML = apiResponseDiv.querySelector('.content').innerHTML;
-    
-    // Usuń potencjalne pozostałości po ładowaniu
-    const mathElements = tempContainer.querySelectorAll('.MathJax, math');
-    mathElements.forEach(el => el.remove());
-    
-    apiResponseDiv.querySelector('.content').innerHTML = tempContainer.innerHTML;
-    await MathJax.typesetPromise([apiResponseDiv]);
+        setTimeout(async () => {
+            try {
+                await MathJax.typesetPromise([apiResponseDiv]);
+            } catch (error) {
+                console.error('Błąd podczas renderowania MathJax:', error);
+            }
+        }, 100); // Opóźnienie 100ms dla pewności
 
   } catch (error) {
     if (error.name === 'AbortError') {
@@ -487,6 +492,7 @@ async function saveSession() {
     isProcessing = false;
     isStreaming = false;
     currentController = null;
+    
 
     // Zapisz sesję jeśli jest zawartość
     const contentElements = document.querySelectorAll('.content');
@@ -494,6 +500,7 @@ async function saveSession() {
       await saveSession();
       await updateSessionTTL();
     }
+
   }
 }
 
