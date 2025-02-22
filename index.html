@@ -57,18 +57,24 @@
     <script>
        MathJax = {
   tex: {
-    inlineMath: [['$', '$'], ['\\(', '\\)']],
-    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    inlineMath: [['$', '$'], ['\\(', '\\)'], ['[', ']']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
   },
   options: {
     skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
-    enableMenu: false // Poprawia wydajność
+    ignoreHtmlClass: 'nostem|no-math'
   },
   startup: {
-    typeset: false // Wyłącz auto-formatowanie
+    typeset: false,
+    ready: () => {
+      MathJax.startup.defaultReady();
+      MathJax.startup.promise.then(() => {
+        MathJax.typesetPromise();
+      });
+    }
   }
 };
-        
       </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
     <script>
@@ -348,10 +354,20 @@ async function saveSession() {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isBot ? 'api-response' : 'user-message'}`;
 
+    let processedContent = message;
+    if (isBot) {
+        // Dodatkowe czyszczenie dla LaTeX
+        processedContent = processedContent
+            .replace(/\\\[/g, '$$')
+            .replace(/\\\]/g, '$$')
+            .replace(/\\\(/g, '$')
+            .replace(/\\\)/g, '$');
+    }
+
     if (isBot) {
         messageDiv.innerHTML = `
             <span class="prefix" id="pedrakp"><img src="pedrak2lil.png" alt="pedrak2lil" id="pedrakphotlil">Pedrak-AI: </span>
-            <span class="content">${DOMPurify.sanitize(marked.parse(message))}</span>
+            <span class="content">${DOMPurify.sanitize(marked.parse(processedContent))}</span>
         `;
     } else {
         const cleanMessage = message.startsWith('Ty: ') ? message.slice(4) : message;
@@ -364,15 +380,14 @@ async function saveSession() {
     chatDiv.appendChild(messageDiv);
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
-    // Ręczne wywołanie MathJax dla nowej wiadomości
+    // Aktualizacja MathJax z dodatkowymi zabezpieczeniami
     if (isBot) {
-        setTimeout(async () => {
-            try {
-                await MathJax.typesetPromise([messageDiv]);
-            } catch (error) {
-                console.error('Błąd podczas renderowania MathJax:', error);
-            }
-        }, 100); // Opóźnienie 100ms dla pewności
+        const typesetNode = messageDiv.querySelector('.content');
+        MathJax.typesetClear([typesetNode]);
+        MathJax.typesetPromise([typesetNode]).catch(err => {
+            console.error('MathJax error:', err);
+            MathJax.typesetPromise([typesetNode]); // Retry
+        });
     }
 }
 
